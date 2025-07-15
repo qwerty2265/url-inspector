@@ -21,7 +21,9 @@ func main() {
 
 	db.ConnectDB()
 
-	r := app.NewRouter()
+	urlHandler, authHandler := app.InitializeApp()
+
+	r := app.NewRouter(urlHandler, authHandler)
 
 	log.Printf("🚀 Server is running on port %v", serverPort)
 	if err := http.ListenAndServe(":"+serverPort, r); err != nil {

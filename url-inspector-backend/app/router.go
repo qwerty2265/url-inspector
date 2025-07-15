@@ -1,12 +1,18 @@
 package app
 
 import (
+	"url-inspector-backend/internal/auth"
+	"url-inspector-backend/internal/url"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 )
 
-func NewRouter() *chi.Mux {
+func NewRouter(
+	urlHandler *url.UrlHandler,
+	authHandler *auth.AuthHandler,
+) *chi.Mux {
 	r := chi.NewRouter()
 
 	r.Use(middleware.Recoverer)
@@ -23,6 +29,11 @@ func NewRouter() *chi.Mux {
 	}
 
 	r.Use(cors.Handler(corsOptions))
+
+	r.Route("/api", func(r chi.Router) {
+		r.Mount("/url", url.URLRouter(*urlHandler))
+		r.Mount("/auth", auth.AuthRouter(*authHandler))
+	})
 
 	return r
 }
