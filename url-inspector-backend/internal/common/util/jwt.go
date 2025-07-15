@@ -14,7 +14,7 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
-func GenerateJWT(userID uint, userRole string) (string, error) {
+func GenerateJWT(userID uint) (string, error) {
 	var jwtKey = []byte(os.Getenv("JWT_SECRET"))
 	expirationTime := time.Now().Add(24 * time.Hour)
 	claims := &Claims{
