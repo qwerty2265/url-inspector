@@ -2,9 +2,11 @@ package auth
 
 import (
 	"errors"
+	"fmt"
 	"url-inspector-backend/internal/common/util"
 	"url-inspector-backend/internal/user"
 
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
@@ -30,6 +32,8 @@ func (s *authService) RegisterUser(inputUser *user.User) (string, error) {
 		return "", err
 	}
 
+	fmt.Printf("Registering user: %+v\n", inputUser)
+
 	existingUser, err := s.userService.GetUserByEmail(*inputUser.Email)
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return "", err
@@ -37,6 +41,21 @@ func (s *authService) RegisterUser(inputUser *user.User) (string, error) {
 	if existingUser != nil {
 		return "", errors.New("user email must be unique")
 	}
+
+	if inputUser.Password == nil || *inputUser.Password == "" {
+		return "", errors.New("password is required")
+	}
+	if err := ValidatePassword(*inputUser.Password); err != nil {
+		return "", err
+	}
+
+	passwordBytes := []byte(*inputUser.Password)
+	hashedPassword, err := bcrypt.GenerateFromPassword(passwordBytes, bcrypt.DefaultCost)
+	if err != nil {
+		return "", err
+	}
+
+	*inputUser.Password = string(hashedPassword)
 
 	if err := s.userService.CreateUser(inputUser); err != nil {
 		return "", err
@@ -60,8 +79,8 @@ func (s *authService) LoginUser(inputUser *user.User) (string, error) {
 		return "", err
 	}
 
-	if existingUser == nil || *existingUser.Password != *inputUser.Password {
-		return "", errors.New("invalid email or password")
+	if err := bcrypt.CompareHashAndPassword([]byte(*existingUser.Password), []byte(*inputUser.Password)); err != nil {
+		return "", errors.New("invalid password or email")
 	}
 
 	token, err := util.GenerateJWT(existingUser.ID)

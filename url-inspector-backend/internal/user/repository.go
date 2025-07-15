@@ -1,6 +1,8 @@
 package user
 
-import "gorm.io/gorm"
+import (
+	"gorm.io/gorm"
+)
 
 type UserRepository interface {
 	CreateUser(user *User) error
@@ -35,7 +37,7 @@ func (r *userRepository) GetUserByID(id uint) (*User, error) {
 
 func (r *userRepository) GetUserByEmail(email string) (*User, error) {
 	var user User
-	if err := r.db.Where("email = ?", email, true).First(&user).Error; err != nil {
+	if err := r.db.Where("email = ?", email).First(&user).Error; err != nil {
 		return nil, err
 	}
 	return &user, nil
