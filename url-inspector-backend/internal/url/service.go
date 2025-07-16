@@ -62,12 +62,15 @@ func (s *urlService) AnalyzeNextQueued() (*URL, error) {
 	}
 
 	url.Status = StatusRunning
-	_ = s.repo.UpdateURL(url)
+	if err := s.repo.UpdateURL(url); err != nil {
+		return nil, err
+	}
 
 	err = analyzeURL(url)
 	if err != nil {
 		url.Status = StatusError
-		fmt.Println("worker: analyze error:", err)
+		s.repo.UpdateURL(url)
+		return url, err
 	}
 
 	url.Status = StatusDone

@@ -13,25 +13,30 @@ import (
 )
 
 func analyzeURL(u *URL) error {
+	parsed, err := url.ParseRequestURI(u.URL)
+	if err != nil || parsed.Scheme == "" || parsed.Host == "" {
+		return errors.New("invalid URL")
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.URL, nil)
 	if err != nil {
-		return err
+		return errors.New("invalid URL")
 	}
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
 			return errors.New("request timed out")
 		}
-		return err
+		return errors.New("unreachable URL")
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode >= 400 {
 		u.PageTitle = http.StatusText(resp.StatusCode)
-		return nil
+		return errors.New("bad HTTP status")
 	}
 
 	doc, err := goquery.NewDocumentFromReader(resp.Body)
