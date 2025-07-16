@@ -132,3 +132,27 @@ func (h *UrlHandler) GetAllURLs(w http.ResponseWriter, r *http.Request) error {
 	json.NewEncoder(w).Encode(response)
 	return nil
 }
+
+func (h *UrlHandler) DeleteURL(w http.ResponseWriter, r *http.Request) error {
+	claims, ok := r.Context().Value(middleware.UserContextKey).(*util.Claims)
+	if !ok || claims == nil {
+		return errors.New("unauthorized")
+	}
+	userID, _ := strconv.ParseUint(claims.UserID, 10, 64)
+	idStr := chi.URLParam(r, "id")
+	id, _ := strconv.ParseUint(idStr, 10, 64)
+
+	if err := h.urlService.DeleteURLByID(uint(id), uint(userID)); err != nil {
+		return err
+	}
+
+	response := common.Response{
+		Success: true,
+		Message: "URL deleted successfully",
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
+	return nil
+}
