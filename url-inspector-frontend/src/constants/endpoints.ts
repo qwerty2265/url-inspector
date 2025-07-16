@@ -4,6 +4,7 @@ export const AUTH_ENDPOINTS = {
   LOGIN: `${API_URL}/auth/login`,
   REGISTER: `${API_URL}/auth/register`,
   LOGOUT: `${API_URL}/auth/logout`,
+  CHECK_AUTH: `${API_URL}/auth/check`,
 } as const
 
 export const URL_ENDPOINTS = {

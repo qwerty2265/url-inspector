@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { authApi } from "../api/auth/auth-api";
+import { useAuthStore } from "../store/authStore";
 
 export default function SignInForm() {
   const [email, setEmail] = useState("");
@@ -8,6 +9,7 @@ export default function SignInForm() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const setLoggedIn = useAuthStore((state) => state.setLoggedIn);
 
   const formIsValid = () => {
     return email.trim() !== "" && password.trim() !== "";
@@ -20,6 +22,7 @@ export default function SignInForm() {
     try {
       const { response, data } = await authApi.login(email, password);
       if (response.ok) {
+        setLoggedIn(true);
         navigate("/");
       } else {
         setError(data?.message || "Login failed");

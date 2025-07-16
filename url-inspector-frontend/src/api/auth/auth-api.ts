@@ -55,5 +55,19 @@ export const authApi = {
     const data = await response.json();
 
     return { response, data };
+  },
+
+  async checkAuth(): Promise<ApiResult<ApiResponse>> {
+    const response = await fetch(API.auth.CHECK_AUTH, {
+      method: "GET",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json"
+      }
+    });
+
+    const data = await response.json();
+
+    return { response, data };
   }
 }

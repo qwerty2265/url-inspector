@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { authApi } from "../api/auth/auth-api";
+import { useAuthStore } from "../store/authStore";
 
 export default function SignUpForm() {
   const [name, setName] = useState("");
@@ -10,6 +11,7 @@ export default function SignUpForm() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const setLoggedIn = useAuthStore((state) => state.setLoggedIn);
 
   const formIsValid = () => {
     return name.trim() !== "" && surname.trim() !== "" && email.trim() !== "" && password.trim() !== "";
@@ -23,6 +25,7 @@ export default function SignUpForm() {
       const { response, data } = await authApi.register(name, surname, email, password);
       if (response.ok) {
         navigate("/");
+        setLoggedIn(true);
       } else {
         setError(data?.message || "Registration failed");
       }
