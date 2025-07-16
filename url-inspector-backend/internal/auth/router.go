@@ -15,6 +15,7 @@ func AuthRouter(authHandler AuthHandler) chi.Router {
 	r.Group(func(r chi.Router) {
 		r.Use(middleware.AuthMiddleware)
 		r.Post("/logout", middleware.ErrorWrapper(authHandler.LogoutUser))
+		r.Get("/check", middleware.ErrorWrapper(authHandler.CheckAuth))
 	})
 
 	return r

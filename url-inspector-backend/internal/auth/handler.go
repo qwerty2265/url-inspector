@@ -2,9 +2,11 @@ package auth
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"time"
 	"url-inspector-backend/internal/common"
+	"url-inspector-backend/internal/common/middleware"
 	"url-inspector-backend/internal/common/util"
 	"url-inspector-backend/internal/user"
 )
@@ -76,6 +78,22 @@ func (h *AuthHandler) LogoutUser(w http.ResponseWriter, r *http.Request) error {
 			Secure:   true,
 			SameSite: http.SameSiteLaxMode,
 		})
+	}
+
+	response := common.Response{
+		Success: true,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
+	return nil
+}
+
+func (h *AuthHandler) CheckAuth(w http.ResponseWriter, r *http.Request) error {
+	claims, ok := r.Context().Value(middleware.UserContextKey).(*util.Claims)
+	if !ok || claims == nil {
+		return errors.New("unauthorized")
 	}
 
 	response := common.Response{
