@@ -9,6 +9,8 @@ type URLService interface {
 	CreateURL(input string, userID uint) (*URL, error)
 	GetAllURLsByUserID(userID uint) ([]URL, error)
 	GetURLByID(id uint, userID uint) (*URL, error)
+	StopURLByID(id uint, userID uint) error
+	ResumeURLByID(id uint, userID uint) error
 	UpdateURL(url *URL) error
 	DeleteURLByID(id uint, userID uint) error
 	AnalyzeNextQueued() (*URL, error)
@@ -48,7 +50,54 @@ func (s *urlService) UpdateURL(url *URL) error {
 	return s.repo.UpdateURL(url)
 }
 
+func (s *urlService) StopURLByID(id uint, userID uint) error {
+	url, err := s.repo.GetURLByID(id)
+	if err != nil {
+		return err
+	}
+
+	if url.UserID != userID {
+		return errors.New("forbidden")
+	}
+
+	if url.Status != StatusRunning {
+		return errors.New("URL is not currently running")
+	}
+
+	url.Status = StatusStopped
+	return s.repo.UpdateURL(url)
+}
+
+func (s *urlService) ResumeURLByID(id uint, userID uint) error {
+	url, err := s.repo.GetURLByID(id)
+	if err != nil {
+		return err
+	}
+
+	if url.UserID != userID {
+		return errors.New("forbidden")
+	}
+
+	if url.Status != StatusStopped {
+		return errors.New("URL is not currently stopped")
+	}
+
+	url.Status = StatusQueued
+	return s.repo.UpdateURL(url)
+}
+
 func (s *urlService) DeleteURLByID(id uint, userID uint) error {
+	url, err := s.repo.GetURLByID(id)
+	if err != nil {
+		return err
+	}
+
+	if url.UserID != userID {
+		return errors.New("forbidden")
+	}
+	if url.Status == StatusRunning {
+		return errors.New("cannot delete URL while it is running")
+	}
 	return s.repo.DeleteURLByID(id)
 }
 
@@ -66,16 +115,17 @@ func (s *urlService) AnalyzeNextQueued() (*URL, error) {
 		return nil, err
 	}
 
-	err = analyzeURL(url)
-	if err != nil {
+	err = analyzeURL(url, s.repo)
+	if err == nil {
+		url.Status = StatusDone
+		s.repo.UpdateURL(url)
+		fmt.Print("Analyze success on url: " + url.URL)
+	} else if err.Error() != "analysis stopped by user" {
 		url.Status = StatusError
 		s.repo.UpdateURL(url)
+		fmt.Print("Analyze error on url: " + url.URL)
 		return url, err
 	}
 
-	url.Status = StatusDone
-	s.repo.UpdateURL(url)
-
-	fmt.Println("worker: analyze success")
 	return url, nil
 }

@@ -71,21 +71,13 @@ func (h *UrlHandler) StopURL(w http.ResponseWriter, r *http.Request) error {
 	idStr := chi.URLParam(r, "id")
 	id, _ := strconv.ParseUint(idStr, 10, 64)
 
-	url, err := h.urlService.GetURLByID(uint(id), uint(userID))
-	if err != nil {
-		return err
-	}
-	url.Status = StatusStopped
-	if err := h.urlService.UpdateURL(url); err != nil {
+	if err := h.urlService.StopURLByID(uint(id), uint(userID)); err != nil {
 		return err
 	}
 
 	response := common.Response{
 		Success: true,
 		Message: "URL stopped successfully",
-		Data: map[string]interface{}{
-			"status": url.Status,
-		},
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -103,20 +95,12 @@ func (h *UrlHandler) ResumeURL(w http.ResponseWriter, r *http.Request) error {
 	idStr := chi.URLParam(r, "id")
 	id, _ := strconv.ParseUint(idStr, 10, 64)
 
-	url, err := h.urlService.GetURLByID(uint(id), uint(userID))
-	if err != nil {
-		return err
-	}
-	url.Status = StatusQueued
-	if err := h.urlService.UpdateURL(url); err != nil {
+	if err := h.urlService.ResumeURLByID(uint(id), uint(userID)); err != nil {
 		return err
 	}
 	response := common.Response{
 		Success: true,
 		Message: "URL resumed successfully",
-		Data: map[string]interface{}{
-			"status": url.Status,
-		},
 	}
 
 	w.Header().Set("Content-Type", "application/json")

@@ -12,30 +12,32 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-func analyzeURL(u *URL) error {
-	parsed, err := url.ParseRequestURI(u.URL)
+func analyzeURL(u *URL, repo URLRepository) error {
+	tmp := *u
+
+	parsed, err := url.ParseRequestURI(tmp.URL)
 	if err != nil || parsed.Scheme == "" || parsed.Host == "" {
 		return errors.New("invalid URL")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.URL, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, tmp.URL, nil)
 	if err != nil {
 		return errors.New("invalid URL")
 	}
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
-			return errors.New("request timed out")
+			return errors.New("analysis timed out")
 		}
 		return errors.New("unreachable URL")
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode >= 400 {
-		u.PageTitle = http.StatusText(resp.StatusCode)
+		tmp.PageTitle = http.StatusText(resp.StatusCode)
 		return errors.New("bad HTTP status")
 	}
 
@@ -44,36 +46,42 @@ func analyzeURL(u *URL) error {
 		return err
 	}
 
-	u.PageTitle = doc.Find("title").Text()
-
-	u.HTMLVersion = "HTML5"
+	tmp.PageTitle = doc.Find("title").Text()
+	tmp.HTMLVersion = "HTML5"
 	if doc.Find("!DOCTYPE html").Length() == 0 {
-		u.HTMLVersion = "HTML4"
+		tmp.HTMLVersion = "HTML4"
 	}
+	tmp.H1Count = doc.Find("h1").Length()
+	tmp.H2Count = doc.Find("h2").Length()
+	tmp.H3Count = doc.Find("h3").Length()
+	tmp.H4Count = doc.Find("h4").Length()
+	tmp.H5Count = doc.Find("h5").Length()
+	tmp.H6Count = doc.Find("h6").Length()
 
-	u.H1Count = doc.Find("h1").Length()
-	u.H2Count = doc.Find("h2").Length()
-	u.H3Count = doc.Find("h3").Length()
-	u.H4Count = doc.Find("h4").Length()
-	u.H5Count = doc.Find("h5").Length()
-	u.H6Count = doc.Find("h6").Length()
-
-	u.HasLoginForm = false
+	tmp.HasLoginForm = false
 	doc.Find("form").Each(func(i int, s *goquery.Selection) {
 		if s.Find("input[type='password']").Length() > 0 {
-			u.HasLoginForm = true
+			tmp.HasLoginForm = true
 		}
 	})
 
 	internal, external := 0, 0
 	var brokenLinks []BrokenLink
-	baseDomain := getDomain(u.URL)
+	baseDomain := getDomain(tmp.URL)
+	stopped := false
+
 	doc.Find("a[href]").Each(func(i int, s *goquery.Selection) {
+		latest, err := repo.GetURLByID(tmp.ID)
+		if err == nil && latest.Status == StatusStopped {
+			stopped = true
+			return
+		}
+
 		href, _ := s.Attr("href")
 		if href == "" || strings.HasPrefix(href, "#") {
 			return
 		}
-		link := resolveURL(u.URL, href)
+		link := resolveURL(tmp.URL, href)
 		if strings.HasPrefix(link, "mailto:") {
 			brokenLinks = append(brokenLinks, BrokenLink{
 				URL:    link,
@@ -94,19 +102,24 @@ func analyzeURL(u *URL) error {
 			})
 		}
 	})
+
+	if stopped {
+		return errors.New("analysis stopped by user")
+	}
+
 	brokenLinksJSON, err := json.Marshal(brokenLinks)
 	if err != nil {
 		return err
 	}
-	u.BrokenLinksList = brokenLinksJSON
-	u.InternalLinksCount = internal
-	u.ExternalLinksCount = external
-	u.BrokenLinksCount = len(brokenLinks)
+	tmp.BrokenLinksList = brokenLinksJSON
+	tmp.InternalLinksCount = internal
+	tmp.ExternalLinksCount = external
+	tmp.BrokenLinksCount = len(brokenLinks)
 
 	if ctx.Err() == context.DeadlineExceeded {
-		return errors.New("request timed out")
+		return errors.New("analysis timed out")
 	}
-
+	*u = tmp
 	return nil
 }
 
