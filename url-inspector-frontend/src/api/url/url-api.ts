@@ -33,4 +33,40 @@ export const urlApi = {
     const data = await response.json();
     return { response, data };
   },
+
+  async stopAnalysis(id: number): Promise<ApiResult<ApiResponse>> {
+    const response = await fetch(API.url.STOP_ANALYSIS(id), {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json"
+      },
+    });
+    const data = await response.json();
+    return { response, data };
+  },
+
+  async resumeAnalysis(id: number): Promise<ApiResult<ApiResponse>> {
+    const response = await fetch(API.url.RESUME_ANALYSIS(id), {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json"
+      },
+    });
+    const data = await response.json();
+    return { response, data };
+  },
+
+  async deleteUrl(id: number): Promise<ApiResult<ApiResponse>> {
+    const response = await fetch(API.url.DELETE_URL(id), {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json"
+      },
+    });
+    const data = await response.json();
+    return { response, data };
+  }
 }

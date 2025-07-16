@@ -10,7 +10,10 @@ export const AUTH_ENDPOINTS = {
 export const URL_ENDPOINTS = {
   ANALYZE: `${API_URL}/url/analyze`,
   GET_ALL: `${API_URL}/url/all`,
-} as const
+  STOP_ANALYSIS: (id: number) => `${API_URL}/url/stop/${id}`,
+  RESUME_ANALYSIS: (id: number) => `${API_URL}/url/resume/${id}`,
+  DELETE_URL: (id: number) => `${API_URL}/url/delete/${id}`,
+} as const;
 
 export type AuthEndpoints = typeof AUTH_ENDPOINTS;
 export type UrlEndpoints = typeof URL_ENDPOINTS;

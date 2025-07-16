@@ -14,7 +14,7 @@ func URLRouter(urlHandler UrlHandler) chi.Router {
 	r.Get("/all", middleware.ErrorWrapper(urlHandler.GetAllURLs))
 	r.Post("/stop/{id}", middleware.ErrorWrapper(urlHandler.StopURL))
 	r.Post("/resume/{id}", middleware.ErrorWrapper(urlHandler.ResumeURL))
-	r.Get("/delete/{id}", middleware.ErrorWrapper(urlHandler.DeleteURL))
+	r.Post("/delete/{id}", middleware.ErrorWrapper(urlHandler.DeleteURL))
 
 	return r
 }
