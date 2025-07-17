@@ -1,9 +1,12 @@
 package url
 
 import (
+	"bufio"
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -41,16 +44,17 @@ func analyzeURL(u *URL, repo URLRepository) error {
 		return errors.New("bad HTTP status")
 	}
 
-	doc, err := goquery.NewDocumentFromReader(resp.Body)
+	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}
-
-	tmp.PageTitle = doc.Find("title").Text()
-	tmp.HTMLVersion = "HTML5"
-	if doc.Find("!DOCTYPE html").Length() == 0 {
-		tmp.HTMLVersion = "HTML4"
+	tmp.HTMLVersion = getHTMLVersion(bytes.NewReader(bodyBytes))
+	doc, err := goquery.NewDocumentFromReader(bytes.NewReader(bodyBytes))
+	if err != nil {
+		return err
 	}
+	tmp.PageTitle = doc.Find("title").Text()
+
 	tmp.H1Count = doc.Find("h1").Length()
 	tmp.H2Count = doc.Find("h2").Length()
 	tmp.H3Count = doc.Find("h3").Length()
@@ -96,9 +100,13 @@ func analyzeURL(u *URL, repo URLRepository) error {
 		}
 		status, err := checkLinkWithContext(ctx, link)
 		if err != nil || status >= 400 {
+			statusText := http.StatusText(status)
+			if statusText == "" {
+				statusText = "Unknown"
+			}
 			brokenLinks = append(brokenLinks, BrokenLink{
 				URL:    link,
-				Status: http.StatusText(status),
+				Status: statusText,
 			})
 		}
 	})
@@ -121,6 +129,23 @@ func analyzeURL(u *URL, repo URLRepository) error {
 	}
 	*u = tmp
 	return nil
+}
+
+func getHTMLVersion(r io.Reader) string {
+	scanner := bufio.NewScanner(r)
+	for i := 0; i < 5 && scanner.Scan(); i++ {
+		line := strings.ToLower(scanner.Text())
+		if strings.Contains(line, "<!doctype html>") {
+			return "HTML5"
+		}
+		if strings.Contains(line, "<!doctype html public") {
+			return "HTML4"
+		}
+		if strings.Contains(line, "<!doctype") {
+			return "Other"
+		}
+	}
+	return "Unknown"
 }
 
 func checkLinkWithContext(ctx context.Context, url string) (int, error) {

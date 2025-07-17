@@ -40,7 +40,14 @@ func (s *urlService) GetAllURLsByUserID(userID uint) ([]URL, error) {
 }
 
 func (s *urlService) GetURLByID(id uint, userID uint) (*URL, error) {
-	return s.repo.GetURLByID(id)
+	url, err := s.repo.GetURLByID(id)
+	if err != nil {
+		return nil, err
+	}
+	if url.UserID != userID {
+		return nil, errors.New("forbidden")
+	}
+	return url, nil
 }
 
 func (s *urlService) UpdateURL(url *URL) error {

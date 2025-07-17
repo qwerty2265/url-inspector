@@ -109,6 +109,32 @@ func (h *UrlHandler) ResumeURL(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
+func (h *UrlHandler) GetURL(w http.ResponseWriter, r *http.Request) error {
+	claims, ok := r.Context().Value(middleware.UserContextKey).(*util.Claims)
+	if !ok || claims == nil {
+		return errors.New("unauthorized")
+	}
+	userID, _ := strconv.ParseUint(claims.UserID, 10, 64)
+	idStr := chi.URLParam(r, "id")
+	id, _ := strconv.ParseUint(idStr, 10, 64)
+
+	url, err := h.urlService.GetURLByID(uint(id), uint(userID))
+	if err != nil {
+		return err
+	}
+
+	response := common.Response{
+		Success: true,
+		Message: "URL retrieved successfully",
+		Data:    url,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
+	return nil
+}
+
 func (h *UrlHandler) GetAllURLs(w http.ResponseWriter, r *http.Request) error {
 	claims, ok := r.Context().Value(middleware.UserContextKey).(*util.Claims)
 	if !ok || claims == nil {
