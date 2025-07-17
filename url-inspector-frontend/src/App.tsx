@@ -7,10 +7,13 @@ import SignUpPage from "./pages/SignUpPage";
 import { useAuthStore } from "./store/authStore";
 import { useEffect, useState } from "react";
 import { authApi } from "./api/auth/auth-api";
+import UrlStatsPage from "./pages/UrlStatsPage";
 
 function AppContent() {
   const location = useLocation();
-  const showHeader = location.pathname === "/";
+  const showHeader =
+    location.pathname === "/" ||
+    location.pathname.startsWith("/url-stats/");
   const setLoggedIn = useAuthStore((state) => state.setLoggedIn);
   const [authChecked, setAuthChecked] = useState(false);
 
@@ -40,6 +43,7 @@ function AppContent() {
           <Route path="*" element={<NotFoundPage />} />
           <Route path="/sign-in" element={<SignInPage />} />
           <Route path="/sign-up" element={<SignUpPage />} />
+          <Route path="/url-stats/:id" element={<UrlStatsPage />} />
         </Routes>
       </main>
     </>

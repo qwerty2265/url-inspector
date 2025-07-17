@@ -16,6 +16,19 @@ export const urlApi = {
     return { response, data };
   },
 
+  async getUrlById(id: number): Promise<ApiResult<ApiResponse>> {
+    const response = await fetch(API.url.GET_URL(id), {
+      method: "GET",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json"
+      },
+    });
+
+    const data = await response.json();
+    return { response, data };
+  },
+
   async analyzeUrl(url: string): Promise<ApiResult<ApiResponse>>  {
     const payload = JSON.stringify({
       url: url.replace(/\s/g, ""),
