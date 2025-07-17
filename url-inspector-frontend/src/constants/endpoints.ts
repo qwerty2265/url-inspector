@@ -10,6 +10,7 @@ export const AUTH_ENDPOINTS = {
 export const URL_ENDPOINTS = {
   ANALYZE: `${API_URL}/url/analyze`,
   GET_ALL: `${API_URL}/url/all`,
+  GET_URL: (id: number) => `${API_URL}/url/${id}`,
   STOP_ANALYSIS: (id: number) => `${API_URL}/url/stop/${id}`,
   RESUME_ANALYSIS: (id: number) => `${API_URL}/url/resume/${id}`,
   DELETE_URL: (id: number) => `${API_URL}/url/delete/${id}`,
